@@ -1,0 +1,634 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>NeoMedica Workforce</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  /* Layout: fixed petrol sidebar (rail) + scrolling work area. Milestone 2: database-connected. */
+  :root{
+    --bg:#eef4f5; --surface:#ffffff; --surface-2:#f6fafb;
+    --fg:#0F3A47; --muted:#5a7682; --border:#dbe7ea; --border-strong:#c3d6db;
+    --accent:#2694AB; --accent-deep:#1C7A8E; --orange:#FF8458;
+    --sidebar-bg:#0F3A47; --sidebar-fg:#cfe3e8; --sidebar-muted:#789aa5; --sidebar-active:#153f4d;
+    --ok:#1f9d63; --ok-bg:#e3f4ec; --warn:#c96a1f; --warn-bg:#fdefe4; --crit:#c6453f; --crit-bg:#fbe7e6;
+    --shadow:0 1px 2px rgba(15,58,71,.06),0 6px 20px rgba(15,58,71,.06);
+    --radius:14px; --radius-sm:9px;
+    --display:'Poppins',system-ui,sans-serif; --body:'Inter',system-ui,sans-serif; --mono:'IBM Plex Mono',ui-monospace,monospace;
+  }
+  @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+    --bg:#0a222b; --surface:#10323d; --surface-2:#0d2b34;
+    --fg:#e8f0f2; --muted:#92aab2; --border:#1d4653; --border-strong:#275663;
+    --accent:#3cb3c9; --accent-deep:#5ec4d6; --orange:#ff9566;
+    --sidebar-bg:#08202a; --sidebar-fg:#bcd6dd; --sidebar-muted:#5f8491; --sidebar-active:#123744;
+    --ok:#3bbd82; --ok-bg:#0f3a33; --warn:#e4913f; --warn-bg:#3a2a1a; --crit:#e2655f; --crit-bg:#3a1f1f;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 6px 22px rgba(0,0,0,.28);
+    color-scheme:dark;
+  }}
+  :root[data-theme="dark"]{
+    --bg:#0a222b; --surface:#10323d; --surface-2:#0d2b34;
+    --fg:#e8f0f2; --muted:#92aab2; --border:#1d4653; --border-strong:#275663;
+    --accent:#3cb3c9; --accent-deep:#5ec4d6; --orange:#ff9566;
+    --sidebar-bg:#08202a; --sidebar-fg:#bcd6dd; --sidebar-muted:#5f8491; --sidebar-active:#123744;
+    --ok:#3bbd82; --ok-bg:#0f3a33; --warn:#e4913f; --warn-bg:#3a2a1a; --crit:#e2655f; --crit-bg:#3a1f1f;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 6px 22px rgba(0,0,0,.28);
+    color-scheme:dark;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--body);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+  h1,h2,h3,h4{font-family:var(--display);font-weight:600;margin:0;text-wrap:balance;letter-spacing:-.01em}
+  .mono{font-family:var(--mono)}
+  button{font-family:inherit}
+  a{color:var(--accent-deep)}
+  [hidden]{display:none!important}
+
+  /* ---------- Login ---------- */
+  .login{min-height:100%;display:grid;grid-template-columns:1fr 1fr}
+  .login .left{background:var(--sidebar-bg);color:var(--sidebar-fg);padding:48px max(32px,env(safe-area-inset-left,0px));display:flex;flex-direction:column;justify-content:space-between}
+  .login .left h2{color:#fff;font-size:28px;margin-top:40px;max-width:420px}
+  .login .left p{color:var(--sidebar-muted);max-width:420px;font-size:14px}
+  .login .right{display:grid;place-items:center;padding:40px max(24px,env(safe-area-inset-right,0px))}
+  .login-card{width:100%;max-width:380px}
+  .login-card h1{font-size:22px;margin-bottom:4px}
+  .login-card .sub{color:var(--muted);font-size:13.5px;margin-bottom:22px}
+  .login-card .fld{margin-bottom:14px}
+  .login-card .err{background:var(--crit-bg);color:var(--crit);border-radius:9px;padding:10px 12px;font-size:13px;margin-bottom:14px}
+  .login-card .foot{color:var(--muted);font-size:12px;margin-top:18px;line-height:1.5}
+  @media (max-width:760px){.login{grid-template-columns:1fr}.login .left{padding:28px 24px}.login .left h2{font-size:22px;margin-top:16px}}
+
+  .app{display:flex;min-height:100%}
+
+  /* ---------- Sidebar ---------- */
+  .rail{width:232px;flex:none;background:var(--sidebar-bg);color:var(--sidebar-fg);display:flex;flex-direction:column;
+    padding:20px 14px calc(16px + env(safe-area-inset-bottom,0px)) max(14px,env(safe-area-inset-left,0px));
+    position:sticky;top:0;align-self:flex-start;height:100vh}
+  .brand{display:flex;align-items:center;gap:10px;padding:4px 8px 18px}
+  .mark{display:flex;gap:3px;align-items:flex-end;height:26px}
+  .mark span{width:5px;border-radius:2px;background:var(--accent)}
+  .mark span:nth-child(1){height:12px}.mark span:nth-child(2){height:20px;background:#fff}.mark span:nth-child(3){height:26px}.mark span:nth-child(4){height:16px;background:var(--orange)}
+  .brand b{font-family:var(--display);font-size:18px;color:#fff;font-weight:600;letter-spacing:-.02em}
+  .brand small{display:block;color:var(--sidebar-muted);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;margin-top:1px}
+  .nav{display:flex;flex-direction:column;gap:2px;margin-top:6px}
+  .nav button{display:flex;align-items:center;gap:11px;width:100%;text-align:left;background:none;border:0;color:var(--sidebar-fg);
+    padding:10px 12px;border-radius:9px;cursor:pointer;font-size:14px;transition:background .12s}
+  .nav button:hover{background:var(--sidebar-active)}
+  .nav button.on{background:var(--sidebar-active);color:#fff;font-weight:500}
+  .nav button .ic{width:18px;height:18px;flex:none}
+  .nav button .ic svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+  .rail-foot{margin-top:auto;padding:12px 10px 0;border-top:1px solid rgba(255,255,255,.08);color:var(--sidebar-muted);font-size:11.5px;line-height:1.45}
+  .rail-foot .who{color:var(--sidebar-fg);font-weight:500;word-break:break-all}
+  .rail-foot .conn{display:flex;align-items:center;gap:6px;margin:8px 0}
+  .rail-foot .conn b{width:7px;height:7px;border-radius:50%;background:var(--ok)}
+
+  /* ---------- Work area ---------- */
+  .work{flex:1;min-width:0;display:flex;flex-direction:column}
+  .topbar{position:sticky;top:0;z-index:5;background:var(--surface);border-bottom:1px solid var(--border);
+    display:flex;align-items:center;gap:14px;padding:14px max(20px,env(safe-area-inset-right,0px)) 14px 20px}
+  .topbar .ttl{min-width:0}
+  .topbar h1{font-size:19px}
+  .topbar .sub{color:var(--muted);font-size:12.5px;margin-top:1px}
+  .topbar .spacer{flex:1}
+  .chip{display:inline-flex;align-items:center;gap:7px;background:var(--ok-bg);color:var(--ok);border:1px solid color-mix(in srgb,var(--ok) 35%,transparent);
+    padding:5px 11px;border-radius:999px;font-size:11.5px;font-weight:600;letter-spacing:.02em;white-space:nowrap}
+  .chip b{width:7px;height:7px;border-radius:50%;background:var(--ok)}
+
+  .content{padding:22px max(20px,env(safe-area-inset-right,0px)) 40px 20px;max-width:1120px;width:100%}
+
+  .btn{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--border-strong);background:var(--surface);color:var(--fg);
+    padding:9px 15px;border-radius:9px;font-size:14px;font-weight:500;cursor:pointer;transition:all .12s}
+  .btn:hover{border-color:var(--accent);color:var(--accent-deep)}
+  .btn:disabled{opacity:.55;cursor:default}
+  .btn svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+  .btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+  .btn.primary:hover{background:var(--accent-deep);border-color:var(--accent-deep);color:#fff}
+  .btn.ghost{border-color:transparent;background:transparent}
+  .btn.sm{padding:6px 11px;font-size:12.5px}
+  .btn.xs{padding:4px 9px;font-size:12px}
+  .btn.danger:hover{border-color:var(--crit);color:var(--crit)}
+  .btn.block{width:100%;justify-content:center;padding:11px}
+
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin-bottom:22px}
+  .kpi{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow)}
+  .kpi .lab{color:var(--muted);font-size:12px;letter-spacing:.03em;text-transform:uppercase;font-weight:500}
+  .kpi .val{font-family:var(--display);font-size:30px;font-weight:600;margin-top:6px;font-variant-numeric:tabular-nums}
+
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow)}
+  .card-h{display:flex;align-items:center;gap:12px;padding:15px 18px;border-bottom:1px solid var(--border);flex-wrap:wrap}
+  .card-h h2{font-size:15.5px}
+  .card-h .spacer{flex:1}
+  .card-b{padding:6px 0}
+  section.block{margin-bottom:22px}
+
+  .att{display:flex;align-items:center;gap:13px;padding:13px 18px;border-bottom:1px solid var(--border)}
+  .att:last-child{border-bottom:0}
+  .att .dot{width:9px;height:9px;border-radius:50%;flex:none}
+  .att .dot.crit{background:var(--crit)}.att .dot.warn{background:var(--warn)}
+  .att .txt{flex:1;min-width:0}
+  .att .txt b{font-weight:600}
+  .att .txt .meta{color:var(--muted);font-size:12.5px}
+  .empty{padding:26px 18px;color:var(--muted);text-align:center;font-size:13.5px}
+  .loading{padding:40px;text-align:center;color:var(--muted)}
+
+  .tablewrap{overflow-x:auto}
+  table{width:100%;border-collapse:collapse;font-size:14px}
+  th{text-align:left;color:var(--muted);font-weight:600;font-size:11.5px;letter-spacing:.04em;text-transform:uppercase;padding:11px 16px;border-bottom:1px solid var(--border);white-space:nowrap}
+  td{padding:12px 16px;border-bottom:1px solid var(--border);vertical-align:middle}
+  tr:last-child td{border-bottom:0}
+  tbody tr{cursor:pointer}
+  tbody tr:hover{background:var(--surface-2)}
+  .nm{font-weight:600;display:flex;align-items:center;gap:10px}
+  .av{width:30px;height:30px;border-radius:50%;flex:none;display:grid;place-items:center;font-size:11px;font-weight:600;color:#fff;font-family:var(--display)}
+
+  .pill{display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:999px;font-size:12px;font-weight:600;white-space:nowrap}
+  .pill .d{width:6px;height:6px;border-radius:50%}
+  .stage-applied{background:#e9eef0;color:#4a6670}.stage-applied .d{background:#6f8e98}
+  .stage-review{background:#e6f0fb;color:#2b6cb0}.stage-review .d{background:#2b6cb0}
+  .stage-credentialing{background:var(--warn-bg);color:var(--warn)}.stage-credentialing .d{background:var(--warn)}
+  .stage-matched{background:#efe8fb;color:#7a4fc0}.stage-matched .d{background:#7a4fc0}
+  .stage-active{background:var(--ok-bg);color:var(--ok)}.stage-active .d{background:var(--ok)}
+  @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .stage-applied{background:#22333a;color:#9fb6bd}
+    :root:not([data-theme="light"]) .stage-review{background:#172f44;color:#6aa6e0}
+    :root:not([data-theme="light"]) .stage-matched{background:#2a2340;color:#b79af0}}
+  :root[data-theme="dark"] .stage-applied{background:#22333a;color:#9fb6bd}
+  :root[data-theme="dark"] .stage-review{background:#172f44;color:#6aa6e0}
+  :root[data-theme="dark"] .stage-matched{background:#2a2340;color:#b79af0}
+
+  .st-badge{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;min-width:120px}
+  .st-badge .d{width:7px;height:7px;border-radius:50%}
+  .st-verified .d{background:var(--ok)}.st-verified{color:var(--ok)}
+  .st-pending .d{background:var(--warn)}.st-pending{color:var(--warn)}
+  .st-missing .d{background:var(--crit)}.st-missing{color:var(--crit)}
+  .st-expiring .d{background:var(--warn)}.st-expiring{color:var(--warn)}
+  .st-expired .d{background:var(--crit)}.st-expired{color:var(--crit)}
+
+  .form-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:15px 18px;padding:20px}
+  .fld{display:flex;flex-direction:column;gap:5px;min-width:0}
+  .fld.full{grid-column:1/-1}
+  .fld label{font-size:12.5px;font-weight:600;color:var(--muted)}
+  .fld label .req{color:var(--orange)}
+  .fld .help{font-size:11.5px;color:var(--muted)}
+  .fld .help b{color:var(--warn)}
+  input,select,textarea{font-family:inherit;font-size:14px;color:var(--fg);background:var(--surface-2);border:1px solid var(--border-strong);
+    border-radius:9px;padding:9px 11px;width:100%}
+  input:focus,select:focus,textarea:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:var(--accent)}
+  textarea{resize:vertical;min-height:70px}
+  .form-foot{display:flex;gap:10px;justify-content:flex-end;padding:0 20px 20px}
+
+  .detail-head{display:flex;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:20px}
+  .detail-head .av{width:54px;height:54px;font-size:18px}
+  .detail-head h1{font-size:23px}
+  .detail-head .role{color:var(--muted);font-size:13.5px;margin-top:3px}
+  .detail-head .spacer{flex:1}
+  .factgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1px;background:var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:22px;border:1px solid var(--border)}
+  .fact{background:var(--surface);padding:13px 16px}
+  .fact .k{color:var(--muted);font-size:11px;letter-spacing:.04em;text-transform:uppercase;font-weight:600}
+  .fact .v{margin-top:3px;font-size:14px;word-break:break-word}
+
+  .pipe{display:flex;gap:7px;flex-wrap:wrap;padding:16px 18px}
+  .pipe button{flex:1;min-width:92px;border:1px solid var(--border-strong);background:var(--surface-2);color:var(--muted);
+    border-radius:9px;padding:9px 6px;font-size:12px;font-weight:600;cursor:pointer;text-align:center;transition:all .12s}
+  .pipe button:hover{border-color:var(--accent)}
+  .pipe button.done{background:var(--accent);border-color:var(--accent);color:#fff}
+  .pipe button.cur{outline:2px solid var(--accent);outline-offset:1px;background:var(--accent-deep);border-color:var(--accent-deep);color:#fff}
+
+  .cred-row{display:flex;align-items:center;gap:12px;padding:13px 18px;border-bottom:1px solid var(--border);flex-wrap:wrap}
+  .cred-row:last-child{border-bottom:0}
+  .cred-row .cn{font-weight:600;flex:1;min-width:160px}
+  .cred-row .cn small{display:block;font-weight:400;color:var(--muted);font-size:12px}
+  .cred-row select{width:auto;min-width:130px}
+  .cred-row input[type=date]{width:auto}
+  .cred-row .doc{display:flex;gap:6px;align-items:center}
+  .cred-row .doc input[type=file]{display:none}
+
+  .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(20px);background:var(--fg);color:var(--bg);
+    padding:11px 18px;border-radius:10px;font-size:13.5px;font-weight:500;box-shadow:var(--shadow);opacity:0;pointer-events:none;transition:all .25s;z-index:50;max-width:90vw}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  .toast.err{background:var(--crit);color:#fff}
+
+  .search{position:relative;flex:1;max-width:280px;min-width:180px}
+  .search input{padding-left:34px}
+  .search svg{position:absolute;left:11px;top:50%;transform:translateY(-50%);width:15px;height:15px;stroke:var(--muted);fill:none;stroke-width:2}
+
+  .menu-btn{display:none}
+  @media (max-width:860px){
+    .rail{position:fixed;z-index:30;left:0;top:0;transform:translateX(-100%);transition:transform .22s;box-shadow:var(--shadow)}
+    .rail.open{transform:translateX(0)}
+    .menu-btn{display:inline-flex}
+    .scrim{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:20;opacity:0;pointer-events:none;transition:opacity .2s}
+    .scrim.show{opacity:1;pointer-events:auto}
+    .form-grid{grid-template-columns:1fr}
+  }
+</style>
+</head>
+<body>
+
+<!-- ================= LOGIN ================= -->
+<div class="login" id="loginView" hidden>
+  <div class="left">
+    <div class="brand"><div class="mark"><span></span><span></span><span></span><span></span></div><div><b>NeoMedica</b><small>Workforce</small></div></div>
+    <div>
+      <h2>Puerto Rico's bilingual clinical talent, organized.</h2>
+      <p>Onboarding, credentialing, and placements for NeoMedica's nurse workforce. Internal use.</p>
+    </div>
+    <p style="font-size:12px">Workforce records only · no patient information is stored in this system.</p>
+  </div>
+  <div class="right">
+    <form class="login-card" id="loginForm">
+      <h1>Sign in</h1>
+      <div class="sub">Use your NeoMedica administrator account.</div>
+      <div class="err" id="loginErr" hidden></div>
+      <div class="fld"><label for="lEmail">Email</label><input id="lEmail" type="email" autocomplete="username" required></div>
+      <div class="fld"><label for="lPass">Password</label><input id="lPass" type="password" autocomplete="current-password" required></div>
+      <button class="btn primary block" id="loginBtn" type="submit">Sign in</button>
+      <div class="foot">Access is role-based and every change is logged. Contact an administrator if you need an account.</div>
+    </form>
+  </div>
+</div>
+
+<!-- ================= APP ================= -->
+<div class="app" id="appView" hidden>
+  <aside class="rail" id="rail">
+    <div class="brand">
+      <div class="mark"><span></span><span></span><span></span><span></span></div>
+      <div><b>NeoMedica</b><small>Workforce</small></div>
+    </div>
+    <nav class="nav" id="nav">
+      <button data-view="dashboard" class="on"><span class="ic"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg></span>Dashboard</button>
+      <button data-view="roster"><span class="ic"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>Nurses</button>
+      <button data-view="add"><span class="ic"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></span>Add Nurse</button>
+    </nav>
+    <div class="rail-foot">
+      <div class="who" id="whoami">—</div>
+      <div class="conn"><b></b>Connected · neomedica-workforce</div>
+      <div style="display:flex;gap:8px;margin-top:6px">
+        <button class="btn xs ghost" id="themeBtn" style="color:var(--sidebar-fg);border-color:rgba(255,255,255,.14)">Theme</button>
+        <button class="btn xs ghost" id="signOutBtn" style="color:var(--sidebar-fg);border-color:rgba(255,255,255,.14)">Sign out</button>
+      </div>
+    </div>
+  </aside>
+  <div class="scrim" id="scrim"></div>
+
+  <main class="work">
+    <header class="topbar">
+      <button class="btn sm ghost menu-btn" id="menuBtn" aria-label="Menu"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg></button>
+      <div class="ttl"><h1 id="pgTitle">Dashboard</h1><div class="sub" id="pgSub">Workforce onboarding &amp; credentialing</div></div>
+      <div class="spacer"></div>
+      <div class="chip"><b></b>Database connected</div>
+    </header>
+    <div class="content" id="main"><div class="loading">Loading…</div></div>
+  </main>
+</div>
+<div class="toast" id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js"></script>
+<script>
+/* ============================================================
+   NeoMedica Workforce — Milestone 2 (database-connected)
+   Data lives in Supabase. Access enforced by row-level security.
+   Platform holds PII only. No patient information. (Guardrail G1)
+   ============================================================ */
+const SUPABASE_URL = 'https://atfjqxsnjwjickxbvanl.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_U6dXJe1_N-cyMJCD2CAWoQ_XTs8U0C1'; // publishable key — designed to ship in the browser
+const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const STAGES=[
+  {id:'applied',label:'Applied'},
+  {id:'review',label:'Under Review'},
+  {id:'credentialing',label:'Credentialing'},
+  {id:'matched',label:'Matched'},
+  {id:'active',label:'Active'},
+];
+const stageMap=Object.fromEntries(STAGES.map((s,i)=>[s.id,{...s,order:i}]));
+const PR_MUNIS=['San Juan','Bayamón','Caguas','Carolina','Ponce','Guaynabo','Mayagüez','Arecibo','Humacao','Fajardo','Aguadilla','Cayey','Toa Baja','Trujillo Alto','Dorado'];
+const AV_COLORS=['#2694AB','#1C7A8E','#FF8458','#7a4fc0','#2b6cb0','#1f9d63'];
+
+let user=null, profile=null;
+let nurses=[];           // cached from the database
+const main=document.getElementById('main');
+
+/* ---------- utils ---------- */
+function todayISO(){return new Date().toISOString().slice(0,10)}
+function esc(s){return String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+function initials(n){return((n.first_name?.[0]||'')+(n.last_name?.[0]||'')).toUpperCase()}
+function avColor(n){let h=0;for(const ch of n.id)h=(h*31+ch.charCodeAt(0))%AV_COLORS.length;return AV_COLORS[h]}
+function stagePill(id){const s=stageMap[id]||{label:id};return`<span class="pill stage-${id}"><span class="d"></span>${s.label}</span>`}
+function fullName(n){return `${n.first_name} ${n.last_name}`}
+let toastT;
+function toast(msg,isErr){const t=document.getElementById('toast');t.textContent=msg;t.className='toast show'+(isErr?' err':'');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),isErr?4200:2200)}
+function fail(e,ctx){console.error(ctx,e);toast((ctx?ctx+': ':'')+(e?.message||'Something went wrong'),true)}
+function setHead(t,s){document.getElementById('pgTitle').textContent=t;document.getElementById('pgSub').textContent=s}
+
+/* ---------- credential status ---------- */
+function credState(c){
+  if(c.status==='missing')return{key:'missing',label:'Missing',cls:'st-missing'};
+  if(c.status==='pending')return{key:'pending',label:'Pending review',cls:'st-pending'};
+  if(c.expires&&c.expiry){
+    const days=Math.round((new Date(c.expiry)-new Date(todayISO()))/864e5);
+    if(days<0)return{key:'expired',label:'Expired',cls:'st-expired',days};
+    if(days<=60)return{key:'expiring',label:'Expires in '+days+'d',cls:'st-expiring',days};
+  }
+  return{key:'verified',label:'Verified',cls:'st-verified'};
+}
+function nurseAttention(n){
+  const flags=[];
+  n.credentials.forEach(c=>{const s=credState(c);
+    if(s.key==='expired')flags.push({lvl:'crit',t:c.name+' expired',n});
+    else if(s.key==='expiring')flags.push({lvl:'warn',t:c.name+' '+s.label.toLowerCase(),n});});
+  return flags;
+}
+function readyPct(n){if(!n.credentials.length)return 0;const v=n.credentials.filter(c=>credState(c).key==='verified').length;return Math.round(v/n.credentials.length*100)}
+
+/* ---------- data access ---------- */
+async function loadNurses(){
+  const {data,error}=await db.from('nurses')
+    .select('*, nurse_credentials(id,status,expiry_date,document_path,verified_at,credential_type_id, credential_types(name,description,requires_expiry,sort_order,is_active))')
+    .order('created_at',{ascending:false});
+  if(error)throw error;
+  nurses=(data||[]).map(n=>({
+    ...n,
+    credentials:(n.nurse_credentials||[])
+      .filter(c=>c.credential_types?.is_active!==false)
+      .sort((a,b)=>(a.credential_types?.sort_order??0)-(b.credential_types?.sort_order??0))
+      .map(c=>({id:c.id,name:c.credential_types?.name||'Credential',note:c.credential_types?.description||'',
+                expires:!!c.credential_types?.requires_expiry,status:c.status,expiry:c.expiry_date||'',document_path:c.document_path||''}))
+  }));
+}
+async function refresh(){try{await loadNurses()}catch(e){fail(e,'Could not load nurses')}}
+
+/* ============ VIEWS ============ */
+function viewDashboard(){
+  setHead('Dashboard','Workforce onboarding & credentialing');
+  const byStage=id=>nurses.filter(n=>n.stage===id).length;
+  const allFlags=nurses.flatMap(nurseAttention).sort((a,b)=>a.lvl==='crit'?-1:1);
+  const crit=allFlags.filter(f=>f.lvl==='crit').length;
+  const active=byStage('active');
+  main.innerHTML=`
+    <div class="kpis">
+      <div class="kpi"><div class="lab">Total Nurses</div><div class="val">${nurses.length}</div></div>
+      <div class="kpi"><div class="lab">Active</div><div class="val" style="color:var(--ok)">${active}</div></div>
+      <div class="kpi"><div class="lab">In Pipeline</div><div class="val">${nurses.length-active}</div></div>
+      <div class="kpi"><div class="lab">Credential Flags</div><div class="val" style="color:${crit?'var(--crit)':'var(--fg)'}">${allFlags.length}</div></div>
+    </div>
+    <section class="block card">
+      <div class="card-h"><h2>Needs attention</h2><div class="spacer"></div><span style="color:var(--muted);font-size:12.5px">${allFlags.length} item${allFlags.length===1?'':'s'}</span></div>
+      <div class="card-b">${allFlags.length?allFlags.map(f=>`
+        <div class="att" data-open="${f.n.id}">
+          <span class="dot ${f.lvl}"></span>
+          <div class="txt"><b>${esc(fullName(f.n))}</b> — ${esc(f.t)}<div class="meta">${esc(f.n.municipality||'—')} · ${f.n.license_type} · ${stageMap[f.n.stage]?.label||f.n.stage}</div></div>
+          <button class="btn sm">Open</button>
+        </div>`).join(''):`<div class="empty">${nurses.length?'Nothing needs attention. Every credential is verified and current. ✓':'No nurses yet. Use Add Nurse to create the first record.'}</div>`}
+      </div>
+    </section>
+    <section class="block card">
+      <div class="card-h"><h2>Pipeline by stage</h2></div>
+      <div class="card-b"><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:1px;background:var(--border)">
+        ${STAGES.map(s=>`<div style="background:var(--surface);padding:15px 16px"><div style="font-family:var(--display);font-size:24px;font-weight:600">${byStage(s.id)}</div><div style="margin-top:6px">${stagePill(s.id)}</div></div>`).join('')}
+      </div></div>
+    </section>`;
+  main.querySelectorAll('[data-open]').forEach(el=>el.addEventListener('click',()=>openDetail(el.dataset.open)));
+}
+
+function viewRoster(q=''){
+  setHead('Nurses','All nurse records');
+  const list=nurses.filter(n=>!q||((fullName(n)+' '+(n.municipality||'')+' '+(n.specialty||'')+' '+(n.license_number||'')).toLowerCase().includes(q.toLowerCase())));
+  main.innerHTML=`
+    <div class="card">
+      <div class="card-h">
+        <div class="search"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.3-4.3"/></svg><input id="q" placeholder="Search name, town, specialty, license…" value="${esc(q)}"></div>
+        <div class="spacer"></div>
+        <button class="btn sm" id="reloadBtn"><svg viewBox="0 0 24 24"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.5 9a9 9 0 0 1 14.9-3.4L23 10M1 14l4.6 4.4A9 9 0 0 0 20.5 15"/></svg>Refresh</button>
+        <button class="btn sm primary" id="addBtn2"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Add</button>
+      </div>
+      <div class="tablewrap"><table>
+        <thead><tr><th>Nurse</th><th>Town</th><th>License</th><th>Specialty</th><th>Stage</th><th>Ready</th></tr></thead>
+        <tbody>${list.length?list.map(n=>`<tr data-id="${n.id}">
+          <td><div class="nm"><span class="av" style="background:${avColor(n)}">${initials(n)}</span>${esc(fullName(n))}</div></td>
+          <td>${esc(n.municipality)||'—'}</td>
+          <td><span class="mono">${n.license_type} · ${esc(n.license_number)||'—'}</span></td>
+          <td>${esc(n.specialty)||'—'}</td>
+          <td>${stagePill(n.stage)}</td>
+          <td><span class="mono" style="font-weight:600;color:${readyPct(n)===100?'var(--ok)':'var(--muted)'}">${readyPct(n)}%</span></td>
+        </tr>`).join(''):`<tr><td colspan="6"><div class="empty">${q?'No nurses match “'+esc(q)+'”.':'No nurses yet. Click Add to create the first record.'}</div></td></tr>`}</tbody>
+      </table></div>
+    </div>`;
+  main.querySelectorAll('tr[data-id]').forEach(tr=>tr.addEventListener('click',()=>openDetail(tr.dataset.id)));
+  document.getElementById('q').addEventListener('input',e=>{const v=e.target.value;viewRoster(v);const inp=document.getElementById('q');inp.focus();inp.setSelectionRange(v.length,v.length)});
+  document.getElementById('addBtn2').addEventListener('click',()=>go('add'));
+  document.getElementById('reloadBtn').addEventListener('click',async()=>{await refresh();viewRoster(q);toast('Refreshed')});
+}
+
+function viewAdd(){
+  setHead('Add Nurse','Create a new nurse record');
+  main.innerHTML=`
+    <div class="card" style="max-width:760px">
+      <div class="card-h"><h2>New nurse</h2></div>
+      <form class="form-grid" id="addForm">
+        <div class="fld"><label>First name <span class="req">*</span></label><input id="f_first" required></div>
+        <div class="fld"><label>Last name <span class="req">*</span></label><input id="f_last" required></div>
+        <div class="fld"><label>Email</label><input id="f_email" type="email"></div>
+        <div class="fld"><label>Phone</label><input id="f_phone"></div>
+        <div class="fld"><label>Municipality</label><select id="f_muni"><option value="">—</option>${PR_MUNIS.map(m=>`<option>${m}</option>`).join('')}</select></div>
+        <div class="fld"><label>License type</label><select id="f_ltype"><option>RN</option><option>LPN</option><option>APRN</option></select></div>
+        <div class="fld"><label>License number</label><input id="f_lnum" placeholder="PR-RN-00000"></div>
+        <div class="fld"><label>License state</label><select id="f_lstate"><option>PR</option><option>FL</option><option>TX</option><option>NY</option><option>Other</option></select></div>
+        <div class="fld"><label>Specialty</label><input id="f_spec" placeholder="e.g. Chronic care / RPM"></div>
+        <div class="fld"><label>Languages</label><input id="f_lang" value="English, Spanish"></div>
+        <div class="fld full"><label>Notes</label><textarea id="f_notes" placeholder="Onboarding notes…"></textarea><div class="help"><b>No patient information.</b> Workforce notes only.</div></div>
+      </form>
+      <div class="form-foot">
+        <button class="btn" id="cancelBtn" type="button">Cancel</button>
+        <button class="btn primary" id="saveBtn" type="button">Create record</button>
+      </div>
+    </div>`;
+  const val=id=>document.getElementById(id).value.trim();
+  document.getElementById('cancelBtn').addEventListener('click',()=>go('roster'));
+  document.getElementById('addForm').addEventListener('submit',e=>{e.preventDefault();document.getElementById('saveBtn').click()});
+  document.getElementById('saveBtn').addEventListener('click',async()=>{
+    const first=val('f_first'),last=val('f_last');
+    if(!first||!last){toast('First and last name are required',true);return}
+    const btn=document.getElementById('saveBtn');btn.disabled=true;btn.textContent='Saving…';
+    const row={first_name:first,last_name:last,email:val('f_email')||null,phone:val('f_phone')||null,municipality:val('f_muni')||null,
+      license_type:val('f_ltype'),license_number:val('f_lnum')||null,license_state:val('f_lstate'),specialty:val('f_spec')||null,
+      languages:val('f_lang')||null,notes:val('f_notes')||null};
+    const {data,error}=await db.from('nurses').insert(row).select('id').single();
+    if(error){fail(error,'Could not create record');btn.disabled=false;btn.textContent='Create record';return}
+    await refresh();toast('Nurse record created');openDetail(data.id);
+  });
+}
+
+function openDetail(id){
+  const n=nurses.find(x=>x.id===id);if(!n){go('roster');return}
+  setActiveNav(null);
+  setHead(fullName(n),'Nurse profile & credentialing');
+  const curOrder=stageMap[n.stage]?.order??0;
+  main.innerHTML=`
+    <button class="btn sm ghost" id="backBtn" style="margin-bottom:14px"><svg viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>All nurses</button>
+    <div class="detail-head">
+      <span class="av" style="background:${avColor(n)}">${initials(n)}</span>
+      <div><h1>${esc(fullName(n))}</h1><div class="role">${esc(n.specialty)||'—'} · ${n.license_type} ${esc(n.license_state||'')}</div></div>
+      <div class="spacer"></div>
+      <div style="text-align:right">${stagePill(n.stage)}<div style="margin-top:8px;font-size:12.5px;color:var(--muted)">Credentials <b class="mono" style="color:${readyPct(n)===100?'var(--ok)':'var(--fg)'}">${readyPct(n)}%</b> verified</div></div>
+    </div>
+    <div class="factgrid">
+      <div class="fact"><div class="k">Email</div><div class="v">${esc(n.email)||'—'}</div></div>
+      <div class="fact"><div class="k">Phone</div><div class="v mono">${esc(n.phone)||'—'}</div></div>
+      <div class="fact"><div class="k">Municipality</div><div class="v">${esc(n.municipality)||'—'}</div></div>
+      <div class="fact"><div class="k">License</div><div class="v mono">${n.license_type} · ${esc(n.license_number)||'—'} · ${esc(n.license_state||'')}</div></div>
+      <div class="fact"><div class="k">Languages</div><div class="v">${esc(n.languages)||'—'}</div></div>
+      <div class="fact"><div class="k">Applied</div><div class="v mono">${n.applied_at||'—'}</div></div>
+    </div>
+    <section class="block card">
+      <div class="card-h"><h2>Onboarding stage</h2></div>
+      <div class="pipe" id="pipe">${STAGES.map((s,i)=>`<button data-stage="${s.id}" class="${i<curOrder?'done':''}${i===curOrder?'cur':''}">${s.label}</button>`).join('')}</div>
+    </section>
+    <section class="block card">
+      <div class="card-h"><h2>Credentialing checklist</h2><div class="spacer"></div><span style="color:var(--muted);font-size:12.5px">Status, expiry, and document for each item</span></div>
+      <div id="creds">${n.credentials.map(c=>credRow(c)).join('')||'<div class="empty">No checklist items found.</div>'}</div>
+    </section>
+    <section class="block card">
+      <div class="card-h"><h2>Notes</h2></div>
+      <div style="padding:16px 18px"><textarea id="d_notes" placeholder="Onboarding notes…">${esc(n.notes)}</textarea>
+      <div class="help" style="font-size:11.5px;color:var(--muted);margin-top:5px"><b style="color:var(--warn)">No patient information.</b> Workforce notes only.</div>
+      <div style="margin-top:12px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
+        <button class="btn sm danger" id="delBtn"><svg viewBox="0 0 24 24"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>Delete record</button>
+        <button class="btn sm primary" id="saveNotes">Save notes</button>
+      </div></div>
+    </section>`;
+  document.getElementById('backBtn').addEventListener('click',()=>go('roster'));
+  main.querySelectorAll('#pipe button').forEach(b=>b.addEventListener('click',async()=>{
+    const {error}=await db.from('nurses').update({stage:b.dataset.stage}).eq('id',id);
+    if(error)return fail(error,'Could not update stage');
+    await refresh();toast('Stage updated to “'+stageMap[b.dataset.stage].label+'”');openDetail(id);
+  }));
+  bindCreds(n);
+  document.getElementById('saveNotes').addEventListener('click',async()=>{
+    const {error}=await db.from('nurses').update({notes:document.getElementById('d_notes').value||null}).eq('id',id);
+    if(error)return fail(error,'Could not save notes');n.notes=document.getElementById('d_notes').value;toast('Notes saved');
+  });
+  const delBtn=document.getElementById('delBtn');
+  delBtn.addEventListener('click',async()=>{
+    if(!delBtn.dataset.confirm){delBtn.dataset.confirm='1';delBtn.innerHTML='Click again to confirm delete';return}
+    const {error}=await db.from('nurses').delete().eq('id',id);
+    if(error)return fail(error,'Could not delete');
+    await refresh();toast('Record deleted');go('roster');
+  });
+}
+
+function credRow(c){
+  const s=credState(c);
+  return`<div class="cred-row" data-cid="${c.id}">
+    <div class="cn">${esc(c.name)}${c.note?`<small>${esc(c.note)}</small>`:''}</div>
+    <span class="st-badge ${s.cls}"><span class="d"></span>${s.label}</span>
+    <select class="cs-status">
+      <option value="missing"${c.status==='missing'?' selected':''}>Missing</option>
+      <option value="pending"${c.status==='pending'?' selected':''}>Pending review</option>
+      <option value="verified"${c.status==='verified'?' selected':''}>Verified</option>
+    </select>
+    ${c.expires?`<input type="date" class="cs-exp" value="${c.expiry||''}" title="Expiry date">`:''}
+    <div class="doc">
+      <input type="file" class="cs-file" accept=".pdf,.jpg,.jpeg,.png">
+      ${c.document_path?`<button class="btn xs cs-view" type="button">View doc</button>`:''}
+      <button class="btn xs cs-upload" type="button">${c.document_path?'Replace':'Upload'}</button>
+    </div>
+  </div>`;
+}
+function bindCreds(n){
+  main.querySelectorAll('.cred-row').forEach(row=>{
+    const c=n.credentials.find(x=>x.id===row.dataset.cid);
+    const patch=async(fields)=>{
+      const {error}=await db.from('nurse_credentials').update(fields).eq('id',c.id);
+      if(error)return fail(error,'Could not save credential');
+      Object.assign(c,{status:fields.status??c.status,expiry:fields.expiry_date===undefined?c.expiry:(fields.expiry_date||'')});
+      const s=credState(c);const badge=row.querySelector('.st-badge');badge.className='st-badge '+s.cls;badge.innerHTML='<span class="d"></span>'+s.label;
+      toast('Saved');
+    };
+    row.querySelector('.cs-status').addEventListener('change',e=>{
+      const status=e.target.value;
+      patch({status,verified_by:status==='verified'?user.id:null,verified_at:status==='verified'?new Date().toISOString():null});
+    });
+    const exp=row.querySelector('.cs-exp');
+    if(exp)exp.addEventListener('change',e=>patch({expiry_date:e.target.value||null}));
+    const file=row.querySelector('.cs-file');
+    row.querySelector('.cs-upload').addEventListener('click',()=>file.click());
+    file.addEventListener('change',async()=>{
+      const f=file.files[0];if(!f)return;
+      if(f.size>10*1024*1024){toast('File must be under 10 MB',true);return}
+      const safe=f.name.replace(/[^\w.\-]+/g,'_');
+      const path=`nurse/${n.id}/${c.id}/${safe}`;
+      toast('Uploading…');
+      const {error:upErr}=await db.storage.from('credential-docs').upload(path,f,{upsert:true});
+      if(upErr)return fail(upErr,'Upload failed');
+      const {error}=await db.from('nurse_credentials').update({document_path:path}).eq('id',c.id);
+      if(error)return fail(error,'Could not link document');
+      c.document_path=path;toast('Document uploaded');openDetail(n.id);
+    });
+    const view=row.querySelector('.cs-view');
+    if(view)view.addEventListener('click',async()=>{
+      const {data,error}=await db.storage.from('credential-docs').createSignedUrl(c.document_path,120);
+      if(error)return fail(error,'Could not open document');
+      window.open(data.signedUrl,'_blank','noopener');
+    });
+  });
+}
+
+/* ---------- routing ---------- */
+function go(view){setActiveNav(view);const v={dashboard:viewDashboard,roster:()=>viewRoster(''),add:viewAdd}[view];if(v)v();closeRail();window.scrollTo(0,0)}
+function setActiveNav(view){document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('on',b.dataset.view===view))}
+document.getElementById('nav').addEventListener('click',e=>{const b=e.target.closest('button');if(b)go(b.dataset.view)});
+
+/* ---------- theme ---------- */
+document.getElementById('themeBtn').addEventListener('click',()=>{
+  const cur=document.documentElement.getAttribute('data-theme');
+  const dark=cur?cur==='dark':matchMedia('(prefers-color-scheme:dark)').matches;
+  document.documentElement.setAttribute('data-theme',dark?'light':'dark');
+  try{localStorage.setItem('neomedica_theme',dark?'light':'dark')}catch(e){}
+});
+try{const th=localStorage.getItem('neomedica_theme');if(th)document.documentElement.setAttribute('data-theme',th)}catch(e){}
+
+/* ---------- mobile rail ---------- */
+function openRail(){document.getElementById('rail').classList.add('open');document.getElementById('scrim').classList.add('show')}
+function closeRail(){document.getElementById('rail').classList.remove('open');document.getElementById('scrim').classList.remove('show')}
+document.getElementById('menuBtn').addEventListener('click',openRail);
+document.getElementById('scrim').addEventListener('click',closeRail);
+
+/* ---------- auth ---------- */
+const loginView=document.getElementById('loginView'),appView=document.getElementById('appView');
+document.getElementById('loginForm').addEventListener('submit',async e=>{
+  e.preventDefault();
+  const btn=document.getElementById('loginBtn'),err=document.getElementById('loginErr');
+  btn.disabled=true;btn.textContent='Signing in…';err.hidden=true;
+  const {error}=await db.auth.signInWithPassword({email:document.getElementById('lEmail').value.trim(),password:document.getElementById('lPass').value});
+  if(error){err.textContent=error.message==='Invalid login credentials'?'That email and password don’t match.':error.message;err.hidden=false;btn.disabled=false;btn.textContent='Sign in';}
+});
+document.getElementById('signOutBtn').addEventListener('click',async()=>{await db.auth.signOut()});
+
+async function enterApp(session){
+  user=session.user;
+  const {data:p,error}=await db.from('profiles').select('role,full_name,email,is_active').eq('id',user.id).single();
+  if(error||!p){fail(error||{},'Could not load your profile');await db.auth.signOut();return}
+  profile=p;
+  if(p.role!=='admin'||!p.is_active){
+    loginView.hidden=false;appView.hidden=true;
+    const err=document.getElementById('loginErr');err.textContent='This workspace is for NeoMedica administrators. Your account is signed in as “'+p.role+'”.';err.hidden=false;
+    await db.auth.signOut();return;
+  }
+  document.getElementById('whoami').textContent=p.email||user.email;
+  loginView.hidden=true;appView.hidden=false;
+  await refresh();go('dashboard');
+}
+function showLogin(){
+  user=null;profile=null;nurses=[];
+  appView.hidden=true;loginView.hidden=false;
+  const btn=document.getElementById('loginBtn');btn.disabled=false;btn.textContent='Sign in';
+  document.getElementById('lPass').value='';
+}
+db.auth.onAuthStateChange((event,session)=>{
+  if(session){if(event==='SIGNED_IN'||event==='INITIAL_SESSION')enterApp(session)}
+  else showLogin();
+});
+</script>
+</body>
+</html>
